@@ -1,0 +1,52 @@
+services:
+  gitea: 
+    image: gitea/gitea:${GITEA_VERSION}-rootless
+    environment:
+      GITEA__database__DB_TYPE: postgres
+      GITEA__database__DB_HOST: db
+      GITEA__database__DB_NAME: gitea
+      GITEA__database__DB_USER: gitea
+      GITEA__database__DB_PASSWD: gitea
+      GITEA__repository__ENABLE_PUSH_CREATE_USER: true
+    networks:
+      - gitea-net
+    depends_on:
+      - db
+    ports:
+      - 3000:3000
+    volumes:
+      - ./gitea_config:/etc/gitea
+      - giteadata:/var/lib/gitea
+    healthcheck:
+      test: ["CMD", curl", "-s", "http://localhost:3000"]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 10s
+  db:
+    image: library/postgres:16
+    environment:
+      POSTGRES_USER: gitea
+      POSTGRES_PASSWORD: gitea
+      POSTGRES_DB: gitea
+    networks:
+      - gitea-net
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - clientdata:/git
+    networks:
+      - gitea-net
+    
+volumes:
+  dbdata:
+  giteadata:
+  clientdata:
+
+networks:
+  gitea-net:
+
